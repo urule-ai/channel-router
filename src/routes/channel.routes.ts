@@ -1,7 +1,37 @@
 import type { FastifyInstance } from 'fastify';
+import { z } from 'zod';
 import type { ChannelManager } from '../services/channel-manager.js';
 import type { MessageRouter } from '../services/message-router.js';
 import type { ChannelType, OutboundMessage, ApprovalCard, ChannelUser } from '../types.js';
+
+const sendMessageSchema = z.object({
+  channelId: z.string(),
+  message: z.object({}).passthrough(),
+  threadId: z.string().optional(),
+});
+
+const sendApprovalSchema = z.object({
+  channelId: z.string(),
+  card: z.object({}).passthrough(),
+});
+
+const createBindingSchema = z.object({
+  channelType: z.string(),
+  channelId: z.string(),
+  workspaceId: z.string(),
+  config: z.object({}).passthrough(),
+});
+
+const createMappingSchema = z.object({
+  channelType: z.string(),
+  channelUserId: z.string(),
+  uruleUserId: z.string(),
+});
+
+const lookupIdentitySchema = z.object({
+  channelType: z.string(),
+  channelUserId: z.string(),
+});
 
 export function registerChannelRoutes(
   app: FastifyInstance,
@@ -31,8 +61,12 @@ export function registerChannelRoutes(
     Params: { channelType: ChannelType };
     Body: { channelId: string; message: OutboundMessage; threadId?: string };
   }>('/api/v1/channels/:channelType/send', async (request, reply) => {
+    const parsed = sendMessageSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: 'Validation failed', details: parsed.error.issues });
+    }
     const { channelType } = request.params;
-    const { channelId, message, threadId } = request.body as {
+    const { channelId, message, threadId } = parsed.data as {
       channelId: string;
       message: OutboundMessage;
       threadId?: string;
@@ -49,8 +83,12 @@ export function registerChannelRoutes(
     Params: { channelType: ChannelType };
     Body: { channelId: string; card: ApprovalCard };
   }>('/api/v1/channels/:channelType/approval', async (request, reply) => {
+    const parsed = sendApprovalSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: 'Validation failed', details: parsed.error.issues });
+    }
     const { channelType } = request.params;
-    const { channelId, card } = request.body as { channelId: string; card: ApprovalCard };
+    const { channelId, card } = parsed.data as { channelId: string; card: ApprovalCard };
     const result = await channelManager.sendApprovalCard({ channelType, channelId }, card);
     return reply.status(200).send(result);
   });
@@ -66,7 +104,11 @@ export function registerChannelRoutes(
 
   // POST /api/v1/channel-bindings
   app.post('/api/v1/channel-bindings', async (request, reply) => {
-    const body = request.body as {
+    const parsed = createBindingSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: 'Validation failed', details: parsed.error.issues });
+    }
+    const body = parsed.data as {
       channelType: ChannelType;
       channelId: string;
       workspaceId: string;
@@ -96,7 +138,11 @@ export function registerChannelRoutes(
 
   // POST /api/v1/identity-mappings
   app.post('/api/v1/identity-mappings', async (request, reply) => {
-    const body = request.body as {
+    const parsed = createMappingSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: 'Validation failed', details: parsed.error.issues });
+    }
+    const body = parsed.data as {
       channelType: ChannelType;
       channelUserId: string;
       uruleUserId: string;
@@ -119,7 +165,11 @@ export function registerChannelRoutes(
 
   // POST /api/v1/identity-mappings/lookup
   app.post('/api/v1/identity-mappings/lookup', async (request, reply) => {
-    const user = request.body as ChannelUser;
+    const parsed = lookupIdentitySchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: 'Validation failed', details: parsed.error.issues });
+    }
+    const user = parsed.data as ChannelUser;
     const identity = await channelManager.lookupIdentity(user);
     if (!identity) {
       return reply.status(404).send({ error: 'Identity not found' });
