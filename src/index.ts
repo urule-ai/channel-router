@@ -12,3 +12,12 @@ server.listen({ port: config.port, host: config.host }, (err, address) => {
   }
   console.log(`urule-channel-router listening at ${address}`);
 });
+
+// Graceful shutdown
+const shutdown = async () => {
+  console.log('Shutting down...');
+  await server.close();
+  process.exit(0);
+};
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);

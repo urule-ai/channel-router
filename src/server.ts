@@ -13,7 +13,22 @@ export interface BuildServerOptions {
 }
 
 export async function buildServer(opts: BuildServerOptions = {}): Promise<FastifyInstance> {
-  const app = Fastify({ logger: opts.logger ?? false });
+  const app = Fastify({
+    logger: {
+      level: process.env['LOG_LEVEL'] ?? 'info',
+      serializers: {
+        req(request) {
+          return {
+            method: request.method,
+            url: request.url,
+            hostname: request.hostname,
+            remoteAddress: request.ip,
+          };
+        },
+      },
+    },
+    genReqId: () => crypto.randomUUID(),
+  });
 
   // Rate limiting
   await app.register(rateLimit, {
