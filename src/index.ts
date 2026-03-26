@@ -2,7 +2,7 @@ import { buildServer } from './server.js';
 import { loadConfig } from './config.js';
 
 const config = loadConfig();
-const server = buildServer({ logger: true });
+const server = await buildServer({ logger: true });
 
 server.listen({ port: config.port, host: config.host }, (err, address) => {
   if (err) {

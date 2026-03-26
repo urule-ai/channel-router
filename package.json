@@ -19,14 +19,5 @@
     "tsx": "^4.7.0",
     "typescript": "^5.3.3",
     "vitest": "^3.0.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/urule-os/channel-router.git"
-  },
-  "homepage": "https://github.com/urule-os/channel-router",
-  "bugs": {
-    "url": "https://github.com/urule-os/channel-router/issues"
-  },
-  "license": "Apache-2.0"
+  }
 }

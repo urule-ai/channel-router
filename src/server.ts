@@ -4,14 +4,18 @@ import { MessageRouter } from './services/message-router.js';
 import { SlackAdapter } from './adapters/slack.adapter.js';
 import { TelegramAdapter } from './adapters/telegram.adapter.js';
 import { GenericWebhookAdapter } from './adapters/webhook.adapter.js';
+import { authMiddleware } from '@urule/auth-middleware';
 import { registerChannelRoutes } from './routes/channel.routes.js';
 
 export interface BuildServerOptions {
   logger?: boolean;
 }
 
-export function buildServer(opts: BuildServerOptions = {}): FastifyInstance {
+export async function buildServer(opts: BuildServerOptions = {}): Promise<FastifyInstance> {
   const app = Fastify({ logger: opts.logger ?? false });
+
+  // Auth middleware
+  await app.register(authMiddleware, { publicRoutes: ['/healthz', '/api/v1/channels'] });
 
   // Initialize services
   const channelManager = new ChannelManager();
