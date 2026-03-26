@@ -13,3 +13,13 @@ export function loadConfig(): Config {
     registryUrl: process.env.REGISTRY_URL ?? 'http://localhost:3001',
   };
 }
+
+export function validateConfig(config: Config): void {
+  const missing: string[] = [];
+  if (!process.env.NATS_URL && config.natsUrl.includes('localhost')) {
+    missing.push('NATS_URL (using default)');
+  }
+  if (missing.length > 0) {
+    console.warn(`[urule-channel-router] Config warnings: ${missing.join(', ')}`);
+  }
+}

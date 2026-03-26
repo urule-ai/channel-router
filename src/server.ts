@@ -1,4 +1,5 @@
 import Fastify, { type FastifyInstance } from 'fastify';
+import rateLimit from '@fastify/rate-limit';
 import { ChannelManager } from './services/channel-manager.js';
 import { MessageRouter } from './services/message-router.js';
 import { SlackAdapter } from './adapters/slack.adapter.js';
@@ -13,6 +14,12 @@ export interface BuildServerOptions {
 
 export async function buildServer(opts: BuildServerOptions = {}): Promise<FastifyInstance> {
   const app = Fastify({ logger: opts.logger ?? false });
+
+  // Rate limiting
+  await app.register(rateLimit, {
+    max: 100,
+    timeWindow: '1 minute',
+  });
 
   // Auth middleware
   await app.register(authMiddleware, { publicRoutes: ['/healthz', '/api/v1/channels'] });
