@@ -2,7 +2,7 @@
 
 Multi-channel message normalization and routing for Slack, Telegram, and webhooks.
 
-Part of the [Urule](https://github.com/urule-os/urule) ecosystem.
+Part of the [Urule](https://github.com/urule-os/urule) ecosystem — the open-source coordination layer for AI agents.
 
 ## Features
 
