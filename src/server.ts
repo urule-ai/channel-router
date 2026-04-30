@@ -1,4 +1,5 @@
 import Fastify, { type FastifyInstance } from 'fastify';
+import cors from '@fastify/cors';
 import rateLimit from '@fastify/rate-limit';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
@@ -31,6 +32,10 @@ export async function buildServer(opts: BuildServerOptions = {}): Promise<Fastif
     },
     genReqId: () => crypto.randomUUID(),
   });
+
+  // Register CORS
+  const allowedOrigins = (process.env['CORS_ORIGINS'] ?? 'http://localhost:3000').split(',');
+  await app.register(cors, { origin: allowedOrigins });
 
   // Rate limiting
   await app.register(rateLimit, {
