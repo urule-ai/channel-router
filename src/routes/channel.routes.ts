@@ -66,7 +66,7 @@ export function registerChannelRoutes(
       return reply.code(400).send({ error: 'Validation failed', details: parsed.error.issues });
     }
     const { channelType } = request.params;
-    const { channelId, message, threadId } = parsed.data as {
+    const { channelId, message, threadId } = parsed.data as unknown as {
       channelId: string;
       message: OutboundMessage;
       threadId?: string;
@@ -88,7 +88,7 @@ export function registerChannelRoutes(
       return reply.code(400).send({ error: 'Validation failed', details: parsed.error.issues });
     }
     const { channelType } = request.params;
-    const { channelId, card } = parsed.data as { channelId: string; card: ApprovalCard };
+    const { channelId, card } = parsed.data as unknown as { channelId: string; card: ApprovalCard };
     const result = await channelManager.sendApprovalCard({ channelType, channelId }, card);
     return reply.status(200).send(result);
   });
