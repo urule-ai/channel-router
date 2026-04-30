@@ -14,12 +14,10 @@ export function loadConfig(): Config {
   };
 }
 
-export function validateConfig(config: Config): void {
+export function validateConfig(_config: Config): void {
   const missing: string[] = [];
-  if (!process.env.NATS_URL && config.natsUrl.includes('localhost')) {
-    missing.push('NATS_URL (using default)');
-  }
+  if (!process.env.NATS_URL) missing.push('NATS_URL');
   if (missing.length > 0) {
-    console.warn(`[urule-channel-router] Config warnings: ${missing.join(', ')}`);
+    throw new Error(`[urule-channel-router] Missing required env vars: ${missing.join(', ')}`);
   }
 }
