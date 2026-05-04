@@ -9,6 +9,7 @@ import { SlackAdapter } from './adapters/slack.adapter.js';
 import { TelegramAdapter } from './adapters/telegram.adapter.js';
 import { GenericWebhookAdapter } from './adapters/webhook.adapter.js';
 import { authMiddleware } from '@urule/auth-middleware';
+import { correlationIdPlugin } from '@urule/correlation-id';
 import { registerChannelRoutes } from './routes/channel.routes.js';
 
 export interface BuildServerOptions {
@@ -30,8 +31,10 @@ export async function buildServer(opts: BuildServerOptions = {}): Promise<Fastif
         },
       },
     },
-    genReqId: () => crypto.randomUUID(),
   });
+
+  // Correlation ID — must be the first plugin so all other middleware logs carry it
+  await app.register(correlationIdPlugin);
 
   // Register CORS
   const allowedOrigins = (process.env['CORS_ORIGINS'] ?? 'http://localhost:3000').split(',');
