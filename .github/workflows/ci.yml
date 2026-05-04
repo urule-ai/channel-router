@@ -3,31 +3,87 @@ name: CI
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
     branches: [main]
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [20]
-
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+      - name: Checkout channel-router
+        uses: actions/checkout@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          path: channel-router
+      - name: Checkout urule (for workspace deps)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/urule
+          path: urule
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
           cache: 'npm'
-
+          cache-dependency-path: |
+            urule/package-lock.json
+            channel-router/package-lock.json
+      - name: Pre-build urule workspace packages
+        run: npm --prefix urule install && npm --prefix urule run build:all
       - name: Install dependencies
-        run: npm ci
-
+        run: npm --prefix channel-router ci --install-links
       - name: Build
-        run: npm run build
-
+        run: npm --prefix channel-router run build
       - name: Test
-        run: npm test
+        run: npm --prefix channel-router test
+
+  docker-publish:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build-and-test]
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout channel-router
+        uses: actions/checkout@v4
+        with:
+          path: channel-router
+      - name: Checkout urule
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/urule
+          path: urule
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: urule/package-lock.json
+      - name: Pre-build urule workspace packages
+        run: npm --prefix urule install && npm --prefix urule run build:all
+      - uses: docker/setup-buildx-action@v3
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/channel-router
+          tags: |
+            type=ref,event=tag
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: channel-router/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=channel-router
+          cache-to: type=gha,scope=channel-router,mode=max
