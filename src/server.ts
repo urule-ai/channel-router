@@ -10,6 +10,7 @@ import { TelegramAdapter } from './adapters/telegram.adapter.js';
 import { GenericWebhookAdapter } from './adapters/webhook.adapter.js';
 import { authMiddleware } from '@urule/auth-middleware';
 import { correlationIdPlugin } from '@urule/correlation-id';
+import { metricsPlugin } from '@urule/observability';
 import { registerChannelRoutes } from './routes/channel.routes.js';
 
 export interface BuildServerOptions {
@@ -36,6 +37,9 @@ export async function buildServer(opts: BuildServerOptions = {}): Promise<Fastif
   // Correlation ID — must be the first plugin so all other middleware logs carry it
   await app.register(correlationIdPlugin);
 
+  // Prometheus /metrics endpoint
+  await app.register(metricsPlugin, { serviceName: 'channel-router' });
+
   // Register CORS
   const allowedOrigins = (process.env['CORS_ORIGINS'] ?? 'http://localhost:3000').split(',');
   await app.register(cors, { origin: allowedOrigins });
@@ -47,7 +51,7 @@ export async function buildServer(opts: BuildServerOptions = {}): Promise<Fastif
   });
 
   // Auth middleware
-  await app.register(authMiddleware, { publicRoutes: ['/healthz', '/api/v1/channels', '/docs'] });
+  await app.register(authMiddleware, { publicRoutes: ['/healthz', '/metrics', '/api/v1/channels', '/docs'] });
 
   // OpenAPI documentation
   await app.register(swagger, {
