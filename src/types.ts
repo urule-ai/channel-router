@@ -1,4 +1,4 @@
-export type ChannelType = 'slack' | 'telegram' | 'email' | 'webhook';
+export type ChannelType = 'slack' | 'telegram' | 'email' | 'webhook' | 'discord';
 
 export interface NormalizedMessage {
   id: string;

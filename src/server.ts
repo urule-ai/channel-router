@@ -8,6 +8,8 @@ import { MessageRouter } from './services/message-router.js';
 import { SlackAdapter } from './adapters/slack.adapter.js';
 import { TelegramAdapter } from './adapters/telegram.adapter.js';
 import { GenericWebhookAdapter } from './adapters/webhook.adapter.js';
+import { EmailAdapter } from './adapters/email.adapter.js';
+import { DiscordAdapter } from './adapters/discord.adapter.js';
 import { authMiddleware } from '@urule/auth-middleware';
 import { correlationIdPlugin } from '@urule/correlation-id';
 import { metricsPlugin } from '@urule/observability';
@@ -78,6 +80,8 @@ export async function buildServer(opts: BuildServerOptions = {}): Promise<Fastif
   channelManager.registerAdapter(new SlackAdapter());
   channelManager.registerAdapter(new TelegramAdapter());
   channelManager.registerAdapter(new GenericWebhookAdapter());
+  channelManager.registerAdapter(new EmailAdapter());
+  channelManager.registerAdapter(new DiscordAdapter());
 
   // Health check
   app.get('/healthz', async () => ({ status: 'ok', service: 'urule-channel-router' }));
